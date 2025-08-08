@@ -5,6 +5,18 @@ canvas.height = innerHeight;
 
 const ctx = canvas.getContext('2d');
 
+function randomIntFromRange(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+function getDistance(ball1, ball2) {
+    let x = ball1.x - ball2.x;
+    let y = ball1.y - ball2.y;
+
+    return Math.sqrt(x ** 2 + y ** 2);
+}
+
+
 class Ball {
     constructor(x, y, dx, dy, radius, color) {
         this.x = x;
@@ -47,6 +59,7 @@ class Ball {
 }
 
 let snake = []
+let food = ''
 // The direction in which the snake is moving 
 // Values: R(Right), U(Up), D(Down), L(Left)
 let movingDirection = 'L';
@@ -74,6 +87,21 @@ function init() {
 
     for (let i = 0; i < 60; i++) {
         snake.push(new Ball(x + Math.abs(dx)*i, y, dx, dy, radius, color))
+    }
+
+    let foodx = randomIntFromRange(100, canvas.width - 100);
+    let foody = randomIntFromRange(100, canvas.height - 100);
+    let foodradius = 20
+    let foodcolor = 'red';
+
+    food = new Ball(foodx, foody, 0, 0, foodradius, foodcolor);
+
+    for (let i = 0; i < food.length; i++) {
+        if (getDistance(snake[i], food) < 15) {
+            food.x = randomIntFromRange(100, canvas.width - 100);
+            food.y = randomIntFromRange(100, canvas.height - 100);
+            i = 0;
+        }
     }
 }
 
@@ -133,12 +161,17 @@ let n;
 function animate() {
     requestAnimationFrame(animate);
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+
     if (isDirectionChanged) {
         change_direction(snake[indctr], keyPressed);
         indctr += 1;
     }
+
+    food.draw();
+
     snake.forEach(s => s.draw());
     snake.forEach(s => s.update());
+
     if (snake[0].x - snake[0].radius <= 0) {
         n = snake.length;
         snake[0].x = snake[0].x + (2*n - 1)
