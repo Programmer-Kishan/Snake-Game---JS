@@ -24,8 +24,6 @@ class Ball {
     }
 
     update() {
-        this.draw();
-
         if (this.dy !== 0) {
             if (
                 this.y - this.radius < 0 ||
@@ -51,7 +49,7 @@ class Ball {
 let snake = []
 // The direction in which the snake is moving 
 // Values: R(Right), U(Up), D(Down), L(Left)
-let movingDirection = 'R';
+let movingDirection = 'L';
 // to get to know if the direction is changed
 let isDirectionChanged = false;
 // index counter will help chaning direction of each ball
@@ -59,20 +57,24 @@ let indctr = 0;
 
 let keyPressed = '';
 
+let KeyData = {
+    "ArrowDown": "D",
+    "ArrowUp": "U",
+    "ArrowLeft": "L",
+    "ArrowRight": "R"
+}
+
 function init() {
-    let x = 300;
+    let x = 900;
     let y = 300;
-    let dx = 2;
+    let dx = -2;
     let dy = 0;
     let radius = 20;
     let color = "#fff";
 
-    snake.push(new Ball(x, y, dx, dy, radius, color));
-    snake.push(new Ball(x + radius * (snake.length * 2), y, dx, dy, radius, color));
-    snake.push(new Ball(x + radius * (snake.length * 2), y, dx, dy, radius, color));
-    snake.push(new Ball(x + radius * (snake.length * 2), y, dx, dy, radius, color));
-    snake.push(new Ball(x + radius * (snake.length * 2), y, dx, dy, radius, color));
-    snake.push(new Ball(x + radius * (snake.length * 2), y, dx, dy, radius, color));
+    for (let i = 0; i < 60; i++) {
+        snake.push(new Ball(x + Math.abs(dx)*i, y, dx, dy, radius, color))
+    }
 }
 
 window.addEventListener('resize', () => {
@@ -83,66 +85,50 @@ window.addEventListener('resize', () => {
 })
 
 function change_direction(ball, pressedKey) {
-    if (pressedKey === 'ArrowDown' && movingDirection !== 'U') {
+    if (pressedKey === "D" && movingDirection !== 'U') {
         ball.dx = 0;
         ball.dy = 2;
-        // movingDirection = 'D';
-    } else if (pressedKey === "ArrowUp" && movingDirection !== 'D') {
+    } else if (pressedKey === "U" && movingDirection !== 'D') {
         ball.dx = 0;
         ball.dy = -2;
-        // movingDirection = 'U';
-    } else if (pressedKey === "ArrowLeft" && movingDirection !== 'R') {
+    } else if (pressedKey === "L" && movingDirection !== 'R') {
         ball.dy = 0;
         ball.dx = -2;
-        // movingDirection = 'L';
-    } else if (pressedKey === "ArrowRight" && movingDirection !== 'L') {
+    } else if (pressedKey === "R" && movingDirection !== 'L') {
         ball.dy = 0;
         ball.dx = 2;
-        // movingDirection = 'R';
     }
 }
 
 document.addEventListener('keydown', (e) => {
-    // const pressedKey = e.key;
-    keyPressed = e.key;
+    keyPressed = KeyData[e.key];
+    console.log(keyPressed);
 
     if (
-        pressedKey === 'ArrowDown' && movingDirection !== 'U' ||
-        pressedKey === "ArrowUp" && movingDirection !== 'D' ||
-        pressedKey === "ArrowLeft" && movingDirection !== 'R' ||
-        pressedKey === "ArrowRight" && movingDirection !== 'L'
+        keyPressed === "D" && movingDirection !== 'U' ||
+        keyPressed === "U" && movingDirection !== 'D' ||
+        keyPressed === "L" && movingDirection !== 'R' ||
+        keyPressed === "R" && movingDirection !== 'L'
     ) {
         isDirectionChanged = true;
     } else {
         isDirectionChanged = false;
     }
-
-    // if (pressedKey === 'ArrowDown' && movingDirection !== 'U') {
-    //     // snake.forEach(s => {
-    //     //     s.dx = 0;
-    //     //     s.dy = 2;
-    //     // })
-    //     // movingDirection = 'D';
-    // } else if (pressedKey === "ArrowUp" && movingDirection !== 'D') {
-    //     // snake.forEach(s => {
-    //     //     s.dx = 0;
-    //     //     s.dy = -2;
-    //     // })
-    //     // movingDirection = 'U';
-    // } else if (pressedKey === "ArrowLeft" && movingDirection !== 'R') {
-    //     // snake.forEach(s => {
-    //     //     s.dy = 0;
-    //     //     s.dx = -2;
-    //     // })
-    //     // movingDirection = 'L';
-    // } else if (pressedKey === "ArrowRight" && movingDirection !== 'L') {
-    //     // snake.forEach(s => {
-    //     //     s.dy = 0;
-    //     //     s.dx = 2;
-    //     // })
-    //     // movingDirection = 'R';
-    // }
 })
+
+function restore_speed() {
+    snake.forEach(s => {
+        if (s.dx != 0) {
+            if (s.dx > 0) s.dx = 2;
+            else s.dx = -2
+        } else if (s.dy != 0) {
+            if (s.dy > 0) s.dy = 2;
+            else s.dy = -2;
+        }
+    })
+}
+
+let n;
 
 function animate() {
     requestAnimationFrame(animate);
@@ -150,14 +136,59 @@ function animate() {
     if (isDirectionChanged) {
         change_direction(snake[indctr], keyPressed);
         indctr += 1;
-    } else {
-        snake.forEach(s => s.update());
+    }
+    snake.forEach(s => s.draw());
+    snake.forEach(s => s.update());
+    if (snake[0].x - snake[0].radius <= 0) {
+        n = snake.length;
+        snake[0].x = snake[0].x + (2*n - 1)
+        for (let i = 1; i < n; i++) {
+            snake[i].x = snake[i-1].x - 2;
+        }
+        snake.forEach(s => {
+            s.dx = 2;
+            s.dy = 0;
+        })
+    } else if (snake[0].x + snake[0].radius >= canvas.width) {
+        n = snake.length;
+        snake[0].x = snake[0].x - (2*n - 1);
+        for (let i = 1; i < n; i++) {
+            snake[i].x = snake[i-1].x + 2;
+        }
+        snake.forEach(s => {
+            s.dx = -2;
+            s.dy = 0;
+        })
+    }
+
+    if (snake[0].y - snake[0].radius <= 0) {
+        n = snake.length;
+        snake[0].y = snake[0].y + (2*n - 1)
+        for (let i = 1; i < n; i++) {
+            snake[i].y = snake[i-1].y - 2;
+        }
+        snake.forEach(s => {
+            s.dx = 0;
+            s.dy = 2;
+        })
+    } else if (snake[0].y + snake[0].radius >= canvas.height) {
+        n = snake.length;
+        snake[0].y = snake[0].y - (2*n - 1);
+        for (let i = 1; i < n; i++) {
+            snake[i].y = snake[i-1].y + 2;
+        }
+        snake.forEach(s => {
+            s.dx = 0;
+            s.dy = -2;
+        })
     }
 
     if (indctr == snake.length) {
         indctr = 0;
         isDirectionChanged = false;
-        if (keyPressed === '')
+        movingDirection = keyPressed;
+        console.log(movingDirection)
+        // restore_speed();
     }
 }
 
