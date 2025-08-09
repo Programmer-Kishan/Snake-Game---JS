@@ -77,6 +77,8 @@ let KeyData = {
     "ArrowRight": "R"
 }
 
+let points = 0;
+
 function init() {
     let x = 900;
     let y = 300;
@@ -86,7 +88,7 @@ function init() {
     let color = "#fff";
 
     for (let i = 0; i < 60; i++) {
-        snake.push(new Ball(x + Math.abs(dx)*i, y, dx, dy, radius, color))
+        snake.push(new Ball(x + Math.abs(dx) * i, y, dx, dy, radius, color))
     }
 
     let foodx = randomIntFromRange(100, canvas.width - 100);
@@ -172,11 +174,42 @@ function animate() {
     snake.forEach(s => s.draw());
     snake.forEach(s => s.update());
 
+    ctx.font = "48px serif";
+    ctx.fillStyle = 'white';
+    ctx.fillText(`Points: ${points}`, canvas.width - 200, 50);
+
+    // food collision detection logic
+    if (
+        snake[0].dy === 0 &&
+        snake[0].y >= food.y - food.radius - 5 &&
+        snake[0].y <= food.y + food.radius + 5
+    ) {
+        if (
+            Math.abs((snake[0].x - snake[0].radius) - (food.x + food.radius)) <= 0 ||
+            Math.abs((snake[0].x + snake[0].radius) - (food.x - food.radius)) <= 0
+        ) {
+            console.log("collision X");
+        }
+    } else if (
+        snake[0].dx === 0 &&
+        snake[0].x >= food.x - food.radius - 5 &&
+        snake[0].x <= food.x + food.radius + 5
+    ) {
+        if (
+            Math.abs((snake[0].y - snake[0].radius) - (food.y + food.radius)) <= 0 ||
+            Math.abs((snake[0].y + snake[0].radius) - (food.y - food.radius)) <= 0
+        ) {
+            console.log("collision Y");
+        }
+    }
+
+
+    // Boundary collision detection logic
     if (snake[0].x - snake[0].radius <= 0) {
         n = snake.length;
-        snake[0].x = snake[0].x + (2*n - 1)
+        snake[0].x = snake[0].x + (2 * n - 1)
         for (let i = 1; i < n; i++) {
-            snake[i].x = snake[i-1].x - 2;
+            snake[i].x = snake[i - 1].x - 2;
         }
         snake.forEach(s => {
             s.dx = 2;
@@ -184,9 +217,9 @@ function animate() {
         })
     } else if (snake[0].x + snake[0].radius >= canvas.width) {
         n = snake.length;
-        snake[0].x = snake[0].x - (2*n - 1);
+        snake[0].x = snake[0].x - (2 * n - 1);
         for (let i = 1; i < n; i++) {
-            snake[i].x = snake[i-1].x + 2;
+            snake[i].x = snake[i - 1].x + 2;
         }
         snake.forEach(s => {
             s.dx = -2;
@@ -196,9 +229,9 @@ function animate() {
 
     if (snake[0].y - snake[0].radius <= 0) {
         n = snake.length;
-        snake[0].y = snake[0].y + (2*n - 1)
+        snake[0].y = snake[0].y + (2 * n - 1)
         for (let i = 1; i < n; i++) {
-            snake[i].y = snake[i-1].y - 2;
+            snake[i].y = snake[i - 1].y - 2;
         }
         snake.forEach(s => {
             s.dx = 0;
@@ -206,9 +239,9 @@ function animate() {
         })
     } else if (snake[0].y + snake[0].radius >= canvas.height) {
         n = snake.length;
-        snake[0].y = snake[0].y - (2*n - 1);
+        snake[0].y = snake[0].y - (2 * n - 1);
         for (let i = 1; i < n; i++) {
-            snake[i].y = snake[i-1].y + 2;
+            snake[i].y = snake[i - 1].y + 2;
         }
         snake.forEach(s => {
             s.dx = 0;
