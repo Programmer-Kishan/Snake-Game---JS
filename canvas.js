@@ -55,6 +55,8 @@ class Ball {
             }
             this.x += this.dx;
         }
+
+        this.draw();
     }
 }
 
@@ -63,6 +65,8 @@ let food = ''
 // The direction in which the snake is moving 
 // Values: R(Right), U(Up), D(Down), L(Left)
 let movingDirection = 'L';
+let movingDirectionArray = [];
+let indexArray = [];
 // to get to know if the direction is changed
 let isDirectionChanged = false;
 // index counter will help chaning direction of each ball
@@ -77,34 +81,46 @@ let KeyData = {
     "ArrowRight": "R"
 }
 
+let foodradius = 20
+let foodcolor = 'red';
+let speed = 4;
+
 let points = 0;
+
+function generateFood() {
+    let x = randomIntFromRange(100, canvas.width - 100);
+    let y = randomIntFromRange(100, canvas.height - 100);
+    food = new Ball(x, y, 0, 0, foodradius, foodcolor);
+    for (let i = 0; i < snake.length; i++) {
+        if (getDistance(snake[i], food) < 15) {
+            x = randomIntFromRange(100, canvas.width - 100);
+            y = randomIntFromRange(100, canvas.height - 100);
+            i = -1;
+        }
+    }
+    // console.log(x, y);
+    food.x = x;
+    food.y = y;
+}
+
+function create_snake(n, gap, x, y, dx, dy, radius, color) {
+    snake = []
+    for (let i = 0; i < n; i++) {
+        snake.push(new Ball(x + gap * i, y, dx, dy, radius, color))
+    }
+}
 
 function init() {
     let x = 900;
     let y = 300;
-    let dx = -2;
+    let dx = -1 * speed;
     let dy = 0;
     let radius = 20;
     let color = "#fff";
 
-    for (let i = 0; i < 60; i++) {
-        snake.push(new Ball(x + Math.abs(dx) * i, y, dx, dy, radius, color))
-    }
+    create_snake(60, speed, x, y, dx, dy, radius, color);
 
-    let foodx = randomIntFromRange(100, canvas.width - 100);
-    let foody = randomIntFromRange(100, canvas.height - 100);
-    let foodradius = 20
-    let foodcolor = 'red';
-
-    food = new Ball(foodx, foody, 0, 0, foodradius, foodcolor);
-
-    for (let i = 0; i < food.length; i++) {
-        if (getDistance(snake[i], food) < 15) {
-            food.x = randomIntFromRange(100, canvas.width - 100);
-            food.y = randomIntFromRange(100, canvas.height - 100);
-            i = 0;
-        }
-    }
+    generateFood()
 }
 
 window.addEventListener('resize', () => {
@@ -115,48 +131,61 @@ window.addEventListener('resize', () => {
 })
 
 function change_direction(ball, pressedKey) {
-    if (pressedKey === "D" && movingDirection !== 'U') {
+    if (pressedKey === "D") {
         ball.dx = 0;
-        ball.dy = 2;
-    } else if (pressedKey === "U" && movingDirection !== 'D') {
+        ball.dy = speed;
+    } else if (pressedKey === "U") {
         ball.dx = 0;
-        ball.dy = -2;
-    } else if (pressedKey === "L" && movingDirection !== 'R') {
+        ball.dy = -1 * speed;
+    } else if (pressedKey === "L") {
         ball.dy = 0;
-        ball.dx = -2;
-    } else if (pressedKey === "R" && movingDirection !== 'L') {
+        ball.dx = -1 * speed;
+    } else if (pressedKey === "R") {
         ball.dy = 0;
-        ball.dx = 2;
+        ball.dx = speed;
+    }
+}
+
+function increase_snake(snake) {
+    for (let i = 0; i < 5; i++) {
+        let x = snake[snake.length - 1].x;
+        let y = snake[snake.length - 1].y;
+        let radius = snake[snake.length - 1].radius;
+        let color = snake[snake.length - 1].color;
+        if (movingDirection === 'D') {
+            snake.push(new Ball(x, y - speed, 0, speed, radius, color));
+        } else if (movingDirection === 'U') {
+            snake.push(new Ball(x, y + speed, 0, -1 * speed, radius, color));
+        } else if (movingDirection === 'L') {
+            snake.push(new Ball(x + speed, y, -1 * speed, 0, radius, color));
+        } else if (movingDirection === 'R') {
+            snake.push(new Ball(x - speed, y, speed, 0, radius, color));
+        }
     }
 }
 
 document.addEventListener('keydown', (e) => {
     keyPressed = KeyData[e.key];
     console.log(keyPressed);
-
+    let lastMovingDirection;
+    if (movingDirectionArray.length === 0) {
+        lastMovingDirection = movingDirection
+    } else {
+        lastMovingDirection = movingDirectionArray[movingDirectionArray.length - 1];
+    }
     if (
-        keyPressed === "D" && movingDirection !== 'U' ||
-        keyPressed === "U" && movingDirection !== 'D' ||
-        keyPressed === "L" && movingDirection !== 'R' ||
-        keyPressed === "R" && movingDirection !== 'L'
+        keyPressed === "D" && lastMovingDirection !== 'U' ||
+        keyPressed === "U" && lastMovingDirection !== 'D' ||
+        keyPressed === "L" && lastMovingDirection !== 'R' ||
+        keyPressed === "R" && lastMovingDirection !== 'L'
     ) {
         isDirectionChanged = true;
+        movingDirectionArray.push(keyPressed);
+        indexArray.push(0);
     } else {
         isDirectionChanged = false;
     }
 })
-
-function restore_speed() {
-    snake.forEach(s => {
-        if (s.dx != 0) {
-            if (s.dx > 0) s.dx = 2;
-            else s.dx = -2
-        } else if (s.dy != 0) {
-            if (s.dy > 0) s.dy = 2;
-            else s.dy = -2;
-        }
-    })
-}
 
 let n;
 
@@ -165,13 +194,17 @@ function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     if (isDirectionChanged) {
-        change_direction(snake[indctr], keyPressed);
-        indctr += 1;
+        for (let i = 0; i < indexArray.length; i++) {
+            change_direction(snake[indexArray[i]], movingDirectionArray[i]);
+            indexArray[i] = indexArray[i] + 1
+        }
+        // change_direction(snake[indctr], keyPressed);
+        // indctr += 1;
     }
 
     food.draw();
 
-    snake.forEach(s => s.draw());
+    // snake.forEach(s => s.draw());
     snake.forEach(s => s.update());
 
     ctx.font = "48px serif";
@@ -179,81 +212,65 @@ function animate() {
     ctx.fillText(`Points: ${points}`, canvas.width - 200, 50);
 
     // food collision detection logic
-    if (
-        snake[0].dy === 0 &&
-        snake[0].y >= food.y - food.radius - 5 &&
-        snake[0].y <= food.y + food.radius + 5
-    ) {
-        if (
-            Math.abs((snake[0].x - snake[0].radius) - (food.x + food.radius)) <= 0 ||
-            Math.abs((snake[0].x + snake[0].radius) - (food.x - food.radius)) <= 0
-        ) {
-            console.log("collision X");
-        }
-    } else if (
-        snake[0].dx === 0 &&
-        snake[0].x >= food.x - food.radius - 5 &&
-        snake[0].x <= food.x + food.radius + 5
-    ) {
-        if (
-            Math.abs((snake[0].y - snake[0].radius) - (food.y + food.radius)) <= 0 ||
-            Math.abs((snake[0].y + snake[0].radius) - (food.y - food.radius)) <= 0
-        ) {
-            console.log("collision Y");
-        }
+    if (getDistance(snake[0], food) < snake[0].radius + food.radius) {
+        points += 1;
+        generateFood();
+        increase_snake(snake);
     }
-
 
     // Boundary collision detection logic
     if (snake[0].x - snake[0].radius <= 0) {
-        n = snake.length;
-        snake[0].x = snake[0].x + (2 * n - 1)
-        for (let i = 1; i < n; i++) {
-            snake[i].x = snake[i - 1].x - 2;
-        }
+        // n = snake.length;
+        // snake[0].x = snake[0].x + (2 * n - 1)
+        // for (let i = 1; i < n; i++) {
+        //     snake[i].x = snake[i - 1].x - 2;
+        // }
         snake.forEach(s => {
-            s.dx = 2;
+            s.dx = 0;
             s.dy = 0;
         })
     } else if (snake[0].x + snake[0].radius >= canvas.width) {
-        n = snake.length;
-        snake[0].x = snake[0].x - (2 * n - 1);
-        for (let i = 1; i < n; i++) {
-            snake[i].x = snake[i - 1].x + 2;
-        }
+        // n = snake.length;
+        // snake[0].x = snake[0].x - (2 * n - 1);
+        // for (let i = 1; i < n; i++) {
+        //     snake[i].x = snake[i - 1].x + 2;
+        // }
         snake.forEach(s => {
-            s.dx = -2;
+            s.dx = 0;
             s.dy = 0;
         })
     }
 
     if (snake[0].y - snake[0].radius <= 0) {
-        n = snake.length;
-        snake[0].y = snake[0].y + (2 * n - 1)
-        for (let i = 1; i < n; i++) {
-            snake[i].y = snake[i - 1].y - 2;
-        }
+        // n = snake.length;
+        // snake[0].y = snake[0].y + (2 * n - 1)
+        // for (let i = 1; i < n; i++) {
+        //     snake[i].y = snake[i - 1].y - 2;
+        // }
         snake.forEach(s => {
             s.dx = 0;
-            s.dy = 2;
+            s.dy = 0;
         })
     } else if (snake[0].y + snake[0].radius >= canvas.height) {
-        n = snake.length;
-        snake[0].y = snake[0].y - (2 * n - 1);
-        for (let i = 1; i < n; i++) {
-            snake[i].y = snake[i - 1].y + 2;
-        }
+        // n = snake.length;
+        // snake[0].y = snake[0].y - (2 * n - 1);
+        // for (let i = 1; i < n; i++) {
+        //     snake[i].y = snake[i - 1].y + 2;
+        // }
         snake.forEach(s => {
             s.dx = 0;
-            s.dy = -2;
+            s.dy = 0;
         })
     }
 
-    if (indctr == snake.length) {
-        indctr = 0;
-        isDirectionChanged = false;
-        movingDirection = keyPressed;
-        console.log(movingDirection)
+    if (indexArray[0] == snake.length) {
+        indexArray = indexArray.slice(1);
+        // indctr = 0;
+        movingDirection = movingDirectionArray[0];
+        movingDirectionArray = movingDirectionArray.slice(1);
+        if (movingDirectionArray.length === 0) isDirectionChanged = false;
+        // movingDirection = keyPressed;
+        // console.log(movingDirection)
         // restore_speed();
     }
 }
